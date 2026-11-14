@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeriFact Vision - Forensic Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Orbitron', 'sans-serif'], 
+                        mono: ['Share Tech Mono', 'monospace'] 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+        
+        /* TEMA DARK MODE (CYBERPUNK) */
+        body { 
+            background-color: #050a14; 
+            color: #e2e8f0; 
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .cyber-panel {
+            background: rgba(10, 25, 47, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.05), inset 0 0 20px rgba(0, 240, 255, 0.05);
+            position: relative;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .cyber-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 2px;
+            background: #00f0ff; box-shadow: 0 0 10px #00f0ff; transition: all 0.3s;
+        }
+        .cyber-panel::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 2px; height: 20px;
+            background: #00f0ff; box-shadow: 0 0 10px #00f0ff; transition: all 0.3s;
+        }
+
+        .glitch { position: relative; color: white; }
+        .glitch::before, .glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .glitch::before {
+            left: 2px; text-shadow: -2px 0 #ff003c; clip: rect(44px, 450px, 56px, 0); animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: -2px 0 #00f0ff; clip: rect(44px, 450px, 56px, 0); animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 83px, 0); } 20% { clip: rect(62px, 9999px, 14px, 0); } 40% { clip: rect(33px, 9999px, 98px, 0); } 60% { clip: rect(89px, 9999px, 40px, 0); } 80% { clip: rect(15px, 9999px, 75px, 0); } 100% { clip: rect(54px, 9999px, 21px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); } 20% { clip: rect(12px, 9999px, 56px, 0); } 40% { clip: rect(78px, 9999px, 23px, 0); } 60% { clip: rect(34px, 9999px, 87px, 0); } 80% { clip: rect(90px, 9999px, 12px, 0); } 100% { clip: rect(20px, 9999px, 67px, 0); }
+        }
+
+        .drop-zone { 
+            border: 2px dashed rgba(0, 240, 255, 0.4); 
+            transition: all 0.3s ease; 
+            background: rgba(0, 240, 255, 0.02);
+        }
+        .drop-zone:hover, .drop-zone.dragover { 
+            border-color: #00f0ff; 
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2) inset;
+        }
+
+        .scan-container { position: relative; overflow: hidden; }
+        .scanline {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: rgba(0, 240, 255, 0.5); box-shadow: 0 0 10px #00f0ff;
+            animation: scan 3s linear infinite;
+        }
+        @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+
+        .cyber-loader {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(0, 240, 255, 0.1);
+            border-top: 3px solid #00f0ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 15px #00f0ff;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .cyber-input {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 240, 255, 0.3); color: #00f0ff; transition: all 0.3s;
+        }
+        .cyber-input:focus { outline: none; border-color: #00f0ff; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); }
+
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* TEMA LIGHT MODE */
+        html:not(.dark) body { 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        }
+        html:not(.dark) .cyber-panel { 
+            background: rgba(255, 255, 255, 0.95); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        html:not(.dark) .cyber-panel::before, html:not(.dark) .cyber-panel::after { background: #0284c7; box-shadow: none; }
+        html:not(.dark) .drop-zone { border-color: #cbd5e1; background: #f1f5f9; }
+        html:not(.dark) .drop-zone:hover { border-color: #0284c7; background: #e2e8f0; }
+        html:not(.dark) .glitch { color: #0f172a; }
+        html:not(.dark) .glitch::before, html:not(.dark) .glitch::after { display: none; }
+        html:not(.dark) .cyber-input { background: #fff; color: #0f172a; border-color: #cbd5e1; }
+        html:not(.dark) .cyber-loader { border-top-color: #0284c7; box-shadow: none; }
+        html:not(.dark) .scanline { background: rgba(2, 132, 199, 0.5); box-shadow: none; }
+        
+        * { box-sizing: border-box; }
+    </style>
+</head>
+<body class="min-h-screen p-6 md:p-12 relative font-sans">
+
+    <!-- LAYAR LOGIN -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-[#050a14] flex items-center justify-center">
+        <div class="cyber-panel p-10 w-full max-w-md mx-4">
+            <h2 class="text-3xl font-bold text-center mb-2 text-cyan-400 glitch" data-text="SYSTEM ACCESS">SYSTEM ACCESS</h2>
+            <p class="text-center text-xs text-slate-500 dark:text-cyan-600 mb-8 font-mono tracking-widest">VERIFACT VISION SECURE LOGIN</p>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-5">
+                    <label class="block text-xs font-bold mb-2 text-slate-600 dark:text-cyan-400 font-mono tracking-wider">AGENT ID</label>
+                    <input type="text" id="username" required class="w-full px-4 py-3 rounded bg-transparent cyber-input font-mono">
+                </div>
+                <div class="mb-8">
+                    <label class="block text-xs font-bold mb-2 text-slate-600 dark:text-cyan-400 font-mono tracking-wider">PASSCODE</label>
+                    <input type="password" id="password" required class="w-full px-4 py-3 rounded bg-transparent cyber-input font-mono">
+                </div>
+                <button type="submit" class="w-full font-bold py-3 rounded transition-all shadow-lg dark:shadow-[0_0_15px_rgba(0,240,255,0.3)] bg-sky-600 text-white border border-sky-600 dark:bg-cyan-900/50 dark:text-cyan-300 dark:border-cyan-500">
+                    AUTHENTICATE
+                </button>
+                <p id="loginError" class="text-red-500 text-xs mt-4 text-center hidden font-mono animate-pulse">ACCESS DENIED. INVALID CREDENTIALS.</p>
+            </form>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+        
+        <!-- Header -->
+        <header class="text-center mb-12 relative border-b border-slate-300 dark:border-cyan-900/50 pb-8">
+            <h1 class="text-5xl md:text-6xl font-black tracking-widest mb-2 glitch" data-text="VERIFACT VISION">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-sky-600 dark:from-cyan-400 dark:via-blue-500 dark:to-cyan-400">VERIFACT VISION</span>
+            </h1>
+            <p class="text-slate-500 dark:text-cyan-600 font-mono text-sm tracking-[0.3em]">DEEPFAKE FORENSIC DASHBOARD</p>
+            
+            <button onclick="toggleTheme()" class="absolute right-0 top-0 p-2 rounded border border-slate-400 dark:border-cyan-800 text-slate-600 dark:text-cyan-400 hover:bg-slate-200 dark:hover:bg-cyan-900/50 transition-colors" title="Ganti Tema">
+                <svg id="iconTheme" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+        </header>
+        
+        <!-- Panel Statistik -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="cyber-panel p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono tracking-wider mb-1">TOTAL KASUS</p>
+                    <h3 class="text-3xl font-bold text-sky-600 dark:text-cyan-400" id="statTotal">0</h3>
+                </div>
+                <svg class="w-10 h-10 text-sky-200 dark:text-cyan-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div class="cyber-panel p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono tracking-wider mb-1">TERDETEKSI PALSU</p>
+                    <h3 class="text-3xl font-bold text-red-600 dark:text-red-500" id="statPalsu">0</h3>
+                </div>
+                <svg class="w-10 h-10 text-red-200 dark:text-red-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <div class="cyber-panel p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono tracking-wider mb-1">TERDETEKSI ASLI</p>
+                    <h3 class="text-3xl font-bold text-emerald-600 dark:text-emerald-400" id="statAsli">0</h3>
+                </div>
+                <svg class="w-10 h-10 text-emerald-200 dark:text-emerald-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Kolom Kiri: Upload -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="cyber-panel p-6">
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-sky-600 dark:text-cyan-400 border-b border-slate-300 dark:border-cyan-900/50 pb-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        DATA INGESTION
+                    </h2>
+                    
+                    <div id="dropZone" class="drop-zone p-8 text-center cursor-pointer" 
+                         onclick="document.getElementById('fileInput').click()"
+                         ondragover="handleDragOver(event)" 
+                         ondragleave="handleDragLeave(event)" 
+                         ondrop="handleDrop(event)">
+                        
+                        <div id="uploadPrompt">
+                            <svg class="w-16 h-16 text-sky-300 dark:text-cyan-700 mx-auto mb-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <p class="text-sm font-bold text-sky-600 dark:text-cyan-300 font-mono">DRAG & DROP OR CLICK</p>
+                            <p class="text-xs text-slate-500 dark:text-cyan-600 mt-2 font-mono">FORMAT: JPG, PNG, MP4 (MAX 5MB)</p>
+                        </div>
+
+                        <div id="imagePreview" class="hidden">
+                            <img id="previewImg" src="" alt="Preview" class="w-full h-40 object-cover rounded border border-slate-300 dark:border-cyan-700 mb-2 shadow-sm dark:shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+                            <p id="fileName" class="text-xs text-sky-600 dark:text-cyan-400 font-mono font-bold truncate"></p>
+                        </div>
+
+                        <input type="file" id="fileInput" accept="image/*,video/*" class="hidden" onchange="handleFileSelect(event)">
+                    </div>
+                    
+                    <button onclick="analyzeImage()" id="btnAnalyze" disabled class="w-full mt-6 font-bold py-3 px-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md dark:shadow-[0_0_15px_rgba(0,240,255,0.4)] bg-sky-600 text-white border border-sky-600 hover:bg-sky-700 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-500 dark:hover:bg-cyan-800/50">
+                        INITIATE SCAN
+                    </button>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="cyber-panel p-8 hidden flex-col items-center justify-center space-y-6">
+                    <div class="cyber-loader"></div>
+                    <p id="loadingText" class="text-sky-600 dark:text-cyan-400 font-mono text-xs animate-pulse text-center tracking-widest">EXTRACTING PIXEL ARTIFACTS...</p>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Hasil -->
+            <div class="lg:col-span-2">
+                <div id="resultArea" class="cyber-panel p-6 md:p-8 hidden">
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-300 dark:border-cyan-900/50 pb-4 mb-6 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 dark:text-white tracking-wider">ANALYSIS REPORT</h2>
+                            <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono mt-1" id="txtHash">HASH: -</p>
+                        </div>
+                        <div id="verdictBadge" class="px-4 py-2 font-bold text-xs tracking-widest font-mono border"></div>
+                    </div>
+
+                    <!-- Gambar -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-cyan-900/50 p-3">
+                            <p class="text-center text-xs text-slate-500 dark:text-cyan-600 mb-2 font-mono tracking-widest">ORIGINAL INPUT</p>
+                            <img id="imgOriginal" src="" alt="Asli" class="w-full object-cover h-64 border border-slate-300 dark:border-cyan-800">
+                        </div>
+                        <div class="bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-cyan-900/50 p-3 scan-container">
+                            <p class="text-center text-xs text-sky-600 dark:text-cyan-400 mb-2 font-mono tracking-widest">XAI HEATMAP</p>
+                            <div class="scanline"></div>
+                            <img id="imgHeatmap" src="" alt="Heatmap" class="w-full object-cover h-64 border border-slate-300 dark:border-cyan-800 relative z-10 mix-blend-normal dark:mix-blend-screen">
+                        </div>
+                    </div>
+
+                    <!-- Skor -->
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-cyan-900/50 p-4 text-center">
+                            <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono mb-1">DEEPFAKE MODEL</p>
+                            <p class="text-2xl font-bold text-sky-600 dark:text-cyan-400 font-mono" id="txtScoreDeepfake">-</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-cyan-900/50 p-4 text-center">
+                            <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono mb-1">AI GEN MODEL</p>
+                            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400 font-mono" id="txtScoreAiGen">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Peringatan -->
+                    <div id="alertBox" class="mt-6 p-4 border border-yellow-500 bg-yellow-50 dark:border-yellow-600/50 dark:bg-yellow-900/20 hidden">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <div>
+                                <h4 class="text-yellow-800 dark:text-yellow-500 font-bold font-mono text-sm tracking-wider">FORENSIC WARNING</h4>
+                                <p class="text-xs text-yellow-700 dark:text-yellow-400 mt-1 font-mono" id="txtForensicNote">-</p>
+                                <p class="text-xs text-yellow-600 dark:text-yellow-600 mt-1 font-mono" id="txtCameraMake">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aksi -->
+                    <div class="mt-8 flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-cyan-900/50 p-4">
+                        <div>
+                            <p class="text-xs text-slate-500 dark:text-cyan-600 font-mono tracking-wider mb-1">SYSTEM VERDICT</p>
+                            <p class="text-lg font-bold text-slate-800 dark:text-white" id="txtVerdict">-</p>
+                        </div>
+                        <a href="#" id="btnDownloadPdf" target="_blank" class="flex items-center gap-2 font-bold py-3 px-6 transition-all shadow-md dark:shadow-[0_0_10px_rgba(0,255,102,0.2)] text-sm font-mono bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/60 dark:text-emerald-300 dark:border-emerald-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            EXPORT PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Riwayat -->
+        <div class="mt-12 cyber-panel p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-sky-600 dark:text-cyan-400 border-b border-slate-300 dark:border-cyan-900/50 pb-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                SECURE LOG (POSTGRESQL)
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse font-mono text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-300 dark:border-cyan-800 text-slate-600 dark:text-cyan-500">
+                            <th class="py-3 px-4 font-bold">CASE ID</th>
+                            <th class="py-3 px-4 font-bold">FILENAME</th>
+                            <th class="py-3 px-4 font-bold">AI VERDICT</th>
+                            <th class="py-3 px-4 font-bold">TIMESTAMP</th>
+                            <th class="py-3 px-4 font-bold text-center">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelRiwayat" class="text-slate-700 dark:text-cyan-200/70">
+                        <!-- Data diisi JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000'; 
+        let selectedFile = null;
+        let loadingInterval = null;
+
+        // === FITUR TEMA DARK/LIGHT ===
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('iconTheme');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
+            } else {
+                html.classList.add('dark');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+            }
+        }
+
+        // === FUNGSI LOGIN ===
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('loginError');
+            
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            fetch(`${API_URL}/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Login Gagal");
+                return response.json();
+            })
+            .then(data => {
+                localStorage.setItem('token', data.access_token);
+                document.getElementById('loginScreen').classList.add('hidden');
+                loadRiwayat();
+                loadStatistik();
+            })
+            .catch(error => {
+                errorMsg.classList.remove('hidden');
+            });
+        }
+
+        // === FITUR DRAG & DROP + PREVIEW ===
+        function handleDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+        function handleDragLeave(e) { e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover'); }
+        function handleDrop(e) { e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover'); if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]); }
+        function handleFileSelect(event) { if (event.target.files.length > 0) processFile(event.target.files[0]); }
+
+        function processFile(file) {
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+                alert("Hanya format Gambar atau Video yang diizinkan."); return;
+            }
+            selectedFile = file;
+            
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('uploadPrompt').classList.add('hidden');
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('fileName').innerText = "FILE: " + file.name;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('uploadPrompt').classList.add('hidden');
+                document.getElementById('imagePreview').classList.remove('hidden');
+                document.getElementById('previewImg').src = "https://via.placeholder.com/300x160/050a14/00f0ff?text=VIDEO+DETECTED";
+                document.getElementById('fileName').innerText = "VIDEO: " + file.name;
+            }
+            document.getElementById('btnAnalyze').disabled = false;
+        }
+
+        // === FITUR ANIMASI LOADING ===
+        function startLoadingAnimation() {
+            const texts = [
+                "EXTRACTING PIXEL ARTIFACTS...",
+                "RUNNING NEURAL ENSEMBLE...",
+                "CHECKING METADATA EXIF...",
+                "GENERATING SECURE REPORT..."
+            ];
+            let i = 0;
+            const textEl = document.getElementById('loadingText');
+            textEl.innerText = texts[0];
+            loadingInterval = setInterval(() => { i = (i + 1) % texts.length; textEl.innerText = texts[i]; }, 2000);
+        }
+        function stopLoadingAnimation() { clearInterval(loadingInterval); }
+
+        // === FUNGSI ANALISIS UTAMA ===
+        async function analyzeImage() {
+            if (!selectedFile) return;
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('resultArea').classList.add('hidden');
+            document.getElementById('btnAnalyze').disabled = true;
+            startLoadingAnimation();
+
+            try {
+                const endpoint = selectedFile.type.startsWith('video/') ? '/analyze/video' : '/analyze/image';
+                const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (response.ok) {
+                    stopLoadingAnimation();
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    const resultArea = document.getElementById('resultArea');
+                    resultArea.classList.remove('hidden');
+                    resultArea.classList.add('fade-in');
+                    
+                    const badge = document.getElementById('verdictBadge');
+                    // LOGIKA WARNA BADGE (PALSU, TIDAK TERVERIFIKASI, ASLI)
+                    if(data.label.includes('PALSU')) {
+                        badge.className = "px-4 py-2 font-bold text-xs tracking-widest font-mono border border-red-500 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 dark:shadow-[0_0_10px_rgba(255,0,60,0.3)]";
+                    } else if (data.label.includes('TIDAK TERVERIFIKASI')) {
+                        badge.className = "px-4 py-2 font-bold text-xs tracking-widest font-mono border border-yellow-500 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 dark:shadow-[0_0_10px_rgba(255,255,0,0.3)]";
+                    } else {
+                        badge.className = "px-4 py-2 font-bold text-xs tracking-widest font-mono border border-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 dark:shadow-[0_0_10px_rgba(0,255,102,0.3)]";
+                    }
+                    badge.innerText = `${data.label} [${data.confidence}%]`;
+
+                    document.getElementById('imgOriginal').src = data.file_url;
+                    document.getElementById('imgHeatmap').src = data.heatmap_url;
+                    document.getElementById('txtHash').innerText = `HASH: ${data.hash_sha256.substring(0, 24)}...`;
+                    document.getElementById('txtVerdict').innerText = data.verdict;
+                    document.getElementById('btnDownloadPdf').href = `${API_URL}/download-report/${data.pdf_filename}`;
+                    
+                    document.getElementById('txtScoreDeepfake').innerText = data.score_deepfake + "%";
+                    document.getElementById('txtScoreAiGen').innerText = data.score_ai_gen + "%";
+
+                    const alertBox = document.getElementById('alertBox');
+                    if (data.forensic_note && data.forensic_note !== "Metadata valid.") {
+                        alertBox.classList.remove('hidden');
+                        document.getElementById('txtForensicNote').innerText = data.forensic_note;
+                        document.getElementById('txtCameraMake').innerText = "DEVICE: " + data.camera_make;
+                    } else {
+                        alertBox.classList.add('hidden');
+                    }
+                    loadRiwayat();
+                    loadStatistik();
+                } else {
+                    stopLoadingAnimation();
+                    alert("FAILED: " + (data.error || "Server error"));
+                    resetForm();
+                }
+            } catch (error) {
+                stopLoadingAnimation();
+                alert("CONNECTION ERROR. SERVER OFFLINE.");
+                resetForm();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btnAnalyze').disabled = false;
+        }
+
+        // === FUNGSI RIWAYAT, STATISTIK & HAPUS ===
+        async function loadRiwayat() {
+            try {
+                const response = await fetch(`${API_URL}/riwayat`);
+                const data = await response.json();
+                const tbody = document.getElementById('tabelRiwayat');
+                tbody.innerHTML = ''; 
+                
+                if(data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500 dark:text-cyan-700">NO DATA FOUND.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(item => {
+                    const isPalsu = item.label.includes('PALSU');
+                    const isUnverified = item.label.includes('TIDAK TERVERIFIKASI');
+                    
+                    let colorClass = 'text-emerald-500';
+                    if(isPalsu) colorClass = 'text-red-500';
+                    if(isUnverified) colorClass = 'text-yellow-500';
+
+                    const borderClass = isPalsu ? 'border-red-500/50 hover:bg-red-500/10' : (isUnverified ? 'border-yellow-500/50 hover:bg-yellow-500/10' : 'border-emerald-500/50 hover:bg-emerald-500/10');
+                    
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-200 dark:border-cyan-900/30 hover:bg-slate-50 dark:hover:bg-cyan-900/20 transition-colors">
+                            <td class="py-3 px-4 text-sky-600 dark:text-cyan-400 font-bold">#${item.id}</td>
+                            <td class="py-3 px-4 text-slate-700 dark:text-cyan-200">${item.nama_file}</td>
+                            <td class="py-3 px-4 font-bold ${colorClass}">${item.label} [${item.confidence}%]</td>
+                            <td class="py-3 px-4 text-slate-500 dark:text-cyan-600">${item.waktu}</td>
+                            <td class="py-3 px-4 text-center">
+                                <button onclick="hapusData(${item.id})" class="border ${borderClass} text-slate-500 dark:text-cyan-600 hover:text-slate-800 dark:hover:text-cyan-300 px-3 py-1 text-xs transition-all">
+                                    DELETE
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) { console.error("Gagal memuat riwayat:", error); }
+        }
+
+        async function loadStatistik() {
+            try {
+                const response = await fetch(`${API_URL}/statistik`);
+                const data = await response.json();
+                document.getElementById('statTotal').innerText = data.total_kasus;
+                document.getElementById('statPalsu').innerText = data.total_palsu;
+                document.getElementById('statAsli').innerText = data.total_asli;
+            } catch (error) { console.error("Gagal memuat statistik"); }
+        }
+
+        async function hapusData(id) {
+            if(!confirm("Hapus data ini dari sistem?")) return;
+            try {
+                const response = await fetch(`${API_URL}/riwayat/${id}`, { method: 'DELETE' });
+                if(response.ok) { loadRiwayat(); loadStatistik(); }
+            } catch (error) { alert("Error koneksi ke server."); }
+        }
+
+        // === INISIALISASI AWAL ===
+        document.addEventListener('DOMContentLoaded', () => {
+            document.documentElement.classList.add('dark');
+            
+            const token = localStorage.getItem('token');
+            if (token) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                loadRiwayat();
+                loadStatistik();
+            }
+        });
+    </script>
+</body>
+</html>

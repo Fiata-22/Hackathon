@@ -1,0 +1,30 @@
+# docker-compose.yml
+# version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: verifact_db
+    environment:
+      POSTGRES_USER: verifact_admin
+      POSTGRES_PASSWORD: rahasia_negara
+      POSTGRES_DB: verifact_forensic
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  localstack:
+    image:  localstack/localstack:4.13.1
+    container_name: verifact_storage
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=us-east-1
+    ports:
+      - "4566:4566" # Port API LocalStack (S3)
+    volumes:
+      - localstack_data:/var/lib/localstack
+
+volumes:
+  postgres_data:
+  localstack_data:

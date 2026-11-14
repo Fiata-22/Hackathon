@@ -8,8 +8,8 @@ from botocore.client import Config
 # ==========================================
 # 1. SETUP DATABASE POSTGRESQL
 # ==========================================
-DATABASE_URL = "postgresql+psycopg2://verifact_admin:rahasia_negara@localhost:5432/verifact_forensic"
-
+import os
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://verifact_admin:rahasia_negara@localhost:5432/verifact_forensic")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

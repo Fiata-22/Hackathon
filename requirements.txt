@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+transformers
+torch
+facenet-pytorch
+opencv-python
+numpy
+Pillow
+sqlalchemy
+psycopg2-binary
+boto3
+reportlab
+python-multipart
+passlib
+bcrypt
+python-jose
